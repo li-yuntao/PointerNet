@@ -6,6 +6,9 @@ http://arxiv.org/pdf/1506.03134v1.pdf.
 
 """
 
+import os
+import pickle as pkl
+
 import torch
 import torch.optim as optim
 import torch.backends.cudnn as cudnn
@@ -18,6 +21,8 @@ from tqdm import tqdm
 
 from PointerNet import PointerNet
 from Data_Generator import TSPDataset
+
+os.environ["CUDA_VISIBLE_DEVICES"]="2"
 
 parser = argparse.ArgumentParser(description="Pytorch implementation of Pointer-Net")
 
@@ -48,19 +53,25 @@ if params.gpu and torch.cuda.is_available():
 else:
     USE_CUDA = False
 
+
 model = PointerNet(params.embedding_size,
-                   params.hiddens,
-                   params.nof_lstms,
-                   params.dropout,
-                   params.bidir)
+                       params.hiddens,
+                       params.nof_lstms,
+                       params.dropout,
+                       params.bidir)
 
-dataset = TSPDataset(params.train_size,
-                     params.nof_points)
 
-dataloader = DataLoader(dataset,
-                        batch_size=params.batch_size,
-                        shuffle=True,
-                        num_workers=4)
+if os.path.exists('dataloader.pkl'):
+    dataloader = pkl.load(open('dataloader.pkl', 'rb'))
+else:
+    dataset = TSPDataset(params.train_size,
+                         params.nof_points)
+
+    dataloader = DataLoader(dataset,
+                            batch_size=params.batch_size,
+                            shuffle=True,
+                            num_workers=4)
+    pkl.dump(dataloader, open('dataloader.pkl', 'wb'))
 
 if USE_CUDA:
     model.cuda()
